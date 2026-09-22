@@ -1,10 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_pdfview/flutter_pdfview.dart';
-import 'package:path_provider/path_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,19 +77,22 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
           onNavigationRequest: (NavigationRequest request) {
             final targetUrl = request.url;
 
-            // باز کردن PDF خوان داخلی در صورت کلیک روی فایل PDF
-            if (targetUrl.toLowerCase().contains('.pdf')) {
-              _openPdfViewer(targetUrl);
-              return NavigationDecision.prevent;
-            }
-
-            // لینک‌های نرم‌افزار ایتا
+            // باز کردن لینک‌های اپلیکیشن ایتا در برنامه ایتا
             if (targetUrl.startsWith('et://') || targetUrl.startsWith('eitaa://')) {
               _launchExternal(targetUrl);
               return NavigationDecision.prevent;
             }
 
-            // خروج از صفحات کانال جهت دانلود یا بازکردن در مرورگر
+            // باز کردن فایل‌های پی‌دی‌اف و دانلودها در دانلودر/نمایشگر گوشی
+            if (targetUrl.toLowerCase().contains('.pdf') ||
+                targetUrl.toLowerCase().contains('.apk') ||
+                targetUrl.toLowerCase().contains('.zip') ||
+                targetUrl.toLowerCase().contains('.rar')) {
+              _launchExternal(targetUrl);
+              return NavigationDecision.prevent;
+            }
+
+            // تفکیک صفحات داخلی از لینک‌های خارجی
             final isInternal = targetUrl.contains('eitaa.com/ketab_shiravi') ||
                 targetUrl.contains('eitaa.com/maghaleh_shiravi') ||
                 targetUrl.contains('eitaa.com/m/');
@@ -118,73 +118,21 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
     }
   }
 
-  // موتور دانلود و باز کردن کتاب در PDF خوان اختصاصی داخلی
-  Future<void> _openPdfViewer(String pdfUrl) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => const Center(
-        child: Card(
-          color: Color(0xFF133B4F),
-          child: Padding(
-            padding: EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(color: Color(0xFF1ABC9C)),
-                SizedBox(height: 16),
-                Text(
-                  'در حال دریافت و بازگشایی کتاب...',
-                  style: TextStyle(color: Colors.white, fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
-    try {
-      final request = await HttpClient().getUrl(Uri.parse(pdfUrl));
-      final response = await request.close();
-      final bytes = await consolidateHttpClientResponseBytes(response);
-
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/temp_book_${DateTime.now().millisecondsSinceEpoch}.pdf');
-      await file.writeAsBytes(bytes, flush: true);
-
-      if (mounted) {
-        Navigator.of(context).pop(); // بستن لودینگ
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => InternalPdfReader(filePath: file.path),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('خطا در دریافت فایل کتاب. اتصال اینترنت را بررسی فرمایید.')),
-        );
-      }
-    }
-  }
-
-  // عملکرد جستجو درون کانال جاری
+  // دیالوگ جستجو
   void _showSearchDialog() {
     final searchController = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF133B4F),
-        title: const Text('جستجو در آثار و مقالات', style: TextStyle(color: Colors.white, fontSize: 16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text('جستجو در محتوا', style: TextStyle(color: Colors.white, fontSize: 16)),
         content: TextField(
           controller: searchController,
           autofocus: true,
           style: const TextStyle(color: Colors.white),
           decoration: const InputDecoration(
-            hintText: 'عنوان کتاب یا موضوع مقاله را بنویسید...',
+            hintText: 'عنوان کتاب یا کلمه کلیدی را بنویسید...',
             hintStyle: TextStyle(color: Colors.white54, fontSize: 13),
             enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF1ABC9C))),
             focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF1ABC9C), width: 2)),
@@ -218,7 +166,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
     );
   }
 
-  // نمایش پنجره ارتباط با ما
+  // پنل ارتباط با ما
   void _showContactUsModal() {
     showModalBottomSheet(
       context: context,
@@ -264,7 +212,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
     );
   }
 
-  // نمایش پنجره جامع درباره ما (زندگینامه و کارنامه علمی استاد)
+  // پنل درباره ما (زندگینامه و کارنامه علمی استاد)
   void _showAboutUsDialog() {
     showDialog(
       context: context,
@@ -273,7 +221,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Container(
           padding: const EdgeInsets.all(20),
-          constraints: const BoxConstraints(maxHeight: 600),
+          constraints: const BoxConstraints(maxHeight: 560),
           child: Column(
             children: [
               const Row(
@@ -287,55 +235,41 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                 ],
               ),
               const Divider(color: Colors.white24, height: 24),
-              Expanded(
+              const Expanded(
                 child: SingleChildScrollView(
                   child: Text(
                     '''استاد "محمدمهدی شیروی خوزانی" مفسّر قرآن کریم، استاد اخلاق و معارف الهی
 
 در نهم فروردین‌ماه سال ۱۳۳۸، در شهرستان خمینی‌شهر (سده) از توابع استان اصفهان، دیده به جهان گشودند. از چهار سالگی، سه سال را در مکتب‌های سنتی محل گذراندند و سپس دوره ششم ابتدایی را در «مدرسه ملی شهر» به پایان رساندند.
 
-فضای اجتماعی آن دوران سبب شد که از همان کودکی به کار و تلاش روی آورند. از جمله فعالیت‌های ایشان می‌توان به شاگردی در خیاطی، کارگری در کارخانه ریسندگی، همکاری در مغازه، کشاورزی در کنار پدر، و نیز کارگری در کارخانه سنگ‌بری و نصب سنگ نما اشاره کرد.
+فضای اجتماعی آن دوران سبب شد که از همان کودکی به کار و تلاش روی آورند. در سال‌های اشتغال، علاقه‌مندی به علوم دینی در ایشان پدید آمد و سرانجام در سال ۱۳۵۷، به مدرسه علمیه مشکاة راه یافتند.
 
-در سال‌های اشتغال به کار سنگ، علاقه‌مندی به علوم دینی در ایشان پدید آمد. سرانجام در سال ۱۳۵۷، به مدرسه علمیه مشکاة در زادگاه خود راه یافتند و به تحصیل جامع‌المقدمات پرداختند. روحیه جست‌وجوگر و عطش دانایی، ایشان را بر آن داشت تا در مدت کوتاهی، کتاب‌های متعددی را مطالعه کنند و به‌طور خودآموخته با شاخه‌های گوناگون علمی آشنا شوند.
+با آغاز جنگ تحمیلی، به عضویت سپاه پاسداران انقلاب اسلامی درآمدند و پس از چهار سال خدمت، در سال ۱۳۶۳ برای ادامه دروس حوزوی عازم قم شدند و دوره سطح حوزه و دروس خارج را با موفقیت سپری کردند.
 
-با پیروزی انقلاب اسلامی و آغاز جنگ تحمیلی در سال ۱۳۵۹، وظیفه دفاع از میهن را بر خود لازم دانستند و به عضویت سپاه پاسداران انقلاب اسلامی درآمدند. در این دوران، مسئولیت‌هایی همچون عملیات، اعزام نیرو، و مربیگری عقیدتی ـ سیاسی را بر عهده داشتند.
+در سال ۱۳۶۸ به تهران هجرت کرده و تا سال ۱۳۸۰ به‌عنوان استاد در دانشگاه علوم پزشکی ایران به تدریس پرداختند.
 
-شوق یادگیری علوم و معارف الهی سبب شد که پس از چهار سال خدمت در سپاه، در سال ۱۳۶۳ برای ادامه تحصیل رسمی دروس حوزوی، عازم شهر قم شوند. به‌واسطه آمادگی علمی پیشین، استعداد خدادادی و پشتکار مثال‌زدنی، در سال ۱۳۶۷ دوره سطح حوزه را به پایان رساندند و مدتی نیز از محضر درس خارج استادان برجسته حوزه علمیه قم بهره بردند.
+در سال ۱۳۷۸، قریحه شعری ایشان شکوفا شد و جرقه تفسیر منظوم سوره یوسف زده شد؛ آغازی برای تألیف مجموعه گرانسنگ «تفسیر معنوی» که تاکنون ۲۸ سوره قرآن در قالب مثنوی (بیش از ۱۵۰ هزار بیت) سروده شده است.
 
-با پایان یافتن جنگ و تحصیلات حوزوی، تصمیم گرفتند در عرصه تعلیم و تربیت نقش‌آفرینی کنند. بر اساس نیاز و دعوت برخی دلسوزان، در سال ۱۳۶۸ به تهران هجرت کردند و تا سال ۱۳۸۰ به‌عنوان استاد دروس عمومی در دانشگاه علوم پزشکی ایران به تدریس پرداختند. هم‌زمان، در دفتر نمایندگی ولی‌فقیه و سپس به‌عنوان رابط فرهنگی دفتر نهاد مقام معظم رهبری در دانشگاه، و نیز به‌عنوان امام جماعت مساجد مختلف فعالیت داشتند. از آن زمان تاکنون، در کسوت روحانیت، به هدایت، تربیت دینی و خدمت به مردم اشتغال دارند.
-
-در سال ۱۳۷۸، بی‌آنکه پیش‌تر تجربه یا آموزشی در عرصه شعر داشته باشند، قریحه شعری ایشان شکوفا شد و با عنایتی خاص، جرقه تفسیر منظوم سوره یوسف زده شد؛ آغازی برای تألیف مجموعه گرانسنگ «تفسیر معنوی» که تاکنون ۲۸ سوره از قرآن کریم را در قالب مثنوی و با شیوه‌ای نوین به نظم کشیده‌اند. از این مجموعه، سه جلد منتشر شده و سایر مجلدات آماده چاپ است.
-
-سوره‌های مبارکه یوسف، نور، ابراهیم، مریم، کوثر، یٰس، فرقان، حجرات، کهف، انبیاء، الرحمن، شمس، نوح، جمعه، حمد، عادیات، عصر، نمل، ناس، عنکبوت، قلم، حج، زلزال، انسان، توحید، اسراء، نحل و بقره از جمله این آثارند. در خلال تفسیر سوره توحید، شرح و تفسیر دعای شریف جوشن کبیر نیز ارائه شده است. حاصل این تلاش‌ها تاکنون بیش از ۱۵۰هزار بیت شعر در قالب «تفسیر معنوی قرآن» است.
-
-این مجموعه، آمیزه‌ای است از واژگان قرآنی، تأملات فلسفی ـ عرفانی، و پیوند آن با معارف اهل‌بیت علیهم‌السلام و «قرآن صاعد» که در عین زیبایی و لطافت، از استحکام علمی و معنوی برخوردار است. ویژگی ممتاز این آثار، آن است که هر خواننده با مطالعه چند آیه نخست، شیفته آن می‌شود.
-
-از دیگر آثار ایشان، مجموعه کتاب‌های «هزاران فکر عمیق» است که تاکنون بیش از هفت هزار نکته حکیمانه در آن گرد آمده و پنج جلد آن منتشر شده است. همچنین، کانال‌های «فکر عمیق» و «محفل انس» در پیام‌رسان‌های تلگرام، بله، ایتا و سروش فعال‌اند و مجموعه‌ای از سخنان حکیمانه، عکس‌نوشته‌ها و بیش از دوهزار فایل صوتی در موضوعات گوناگون را در بر دارند.
-
-مجموعه «پرسمان» نیز حاصل سال‌ها پرسش و پاسخ میان اقشار مختلف مردم و ایشان در پیام‌رسان‌هایی چون تلگرام، واتساپ، بله و ایتا است که همچنان ادامه دارد.
-
-دیگر آثار منظوم ایشان شامل:
-- شرح و تفسیر نامه مبارک امیرالمؤمنین علیه‌السلام به مالک اشتر در قالب مثنوی (حدود ۲۰۰۰ بیت)
-- شرح دعای هفتم صحیفه سجادیه (بیش از ۱۰۰۰ بیت، آماده چاپ)
-- شرح برخی از مناجات‌های خمس عشر به شیوه شعری
-- سرودن بیش از ۲۰۰۰ بیت دوبیتی و حدود ۱۰۰۰ بیت غزل
-
-مجموعه مکتوب جلسات «محفل انس» و سخنرانی‌های بیش از بیست سال گذشته، که کتاب‌هایی چون «شب‌های رمضان»، «روح»، «نماز» و «توحید» از آن جمله‌اند و در دست آماده‌سازی برای چاپ می‌باشند.
-
-از خداوند متعال، طول عمر با عزت و توفیقات روزافزون برای این عالم ربانی و بهره‌مندی هرچه بیشتر دوستداران معارف الهی از محضر این گنجینه گران‌بها را خواستاریم.
+از دیگر آثار ایشان:
+- مجموعه ۵ جلدی «هزاران فکر عمیق»
+- کانال‌های «فکر عمیق» و «محفل انس»
+- مجموعه پاسخ‌های مکتوب «پرسمان»
+- شرح منظوم نامه امیرالمؤمنین (ع) به مالک اشتر
+- شرح دعای هفتم صحیفه سجادیه و مناجات‌های خمس عشر
+- مجموعه مکتوب جلسات «شب‌های رمضان»، «روح»، «نماز» و «توحید»
 
 «این قلم را آل یاسین داده است
 شکر حق، از بای تا سین داده است»''',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 14,
+                      fontSize: 13.5,
                       height: 1.8,
                     ),
                     textAlign: TextAlign.justify,
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -454,60 +388,6 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// صفحه PDF خوان داخلی با امکان ورق زدن، بزرگ‌نمایی و نمایش شماره صفحه
-class InternalPdfReader extends StatefulWidget {
-  final String filePath;
-  const InternalPdfReader({super.key, required this.filePath});
-
-  @override
-  State<InternalPdfReader> createState() => _InternalPdfReaderState();
-}
-
-class _InternalPdfReaderState extends State<InternalPdfReader> {
-  int _totalPages = 0;
-  int _currentPage = 0;
-  bool _isReady = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0B2B3A),
-      appBar: AppBar(
-        title: Text(
-          _isReady ? 'صفحه ${_currentPage + 1} از $_totalPages' : 'نمایشگر کتاب',
-          style: const TextStyle(fontSize: 16, color: Colors.white),
-        ),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF0B2B3A),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: PDFView(
-        filePath: widget.filePath,
-        enableSwipe: true,
-        swipeHorizontal: true,
-        autoSpacing: true,
-        pageFling: true,
-        pageSnap: true,
-        nightMode: false,
-        onRender: (pages) {
-          setState(() {
-            _totalPages = pages ?? 0;
-            _isReady = true;
-          });
-        },
-        onPageChanged: (page, total) {
-          setState(() {
-            _currentPage = page ?? 0;
-          });
-        },
       ),
     );
   }
