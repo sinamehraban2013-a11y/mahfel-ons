@@ -23,25 +23,51 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Prepare Project Structure
+      - name: Setup Project and Build APK
         run: |
-          mkdir temp_src
-          cp pubspec.yaml main.dart logo.png temp_src/ || true
-          flutter create . --org ir.shiravi --project-name mahfelons --empty --platforms=android
-          cp temp_src/pubspec.yaml .
-          mkdir -p lib assets
-          cp temp_src/main.dart lib/main.dart
-          cp temp_src/logo.png assets/logo.png
-          sed -i '/<application/a \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml || true
+          mkdir -p /tmp/src
+          cp pubspec.yaml main.dart logo.png /tmp/src/ 2>/dev/null || true
+          
+          # ساخت یک پروژه خام فلاتر
+          flutter create mahfel_build --org ir.shiravi --project-name mahfel_ons --platforms=android
+          cd mahfel_build
+          
+          # انتقال کدهای اصلی و تنظیمات
+          cp /tmp/src/pubspec.yaml ./pubspec.yaml
+          mkdir -p assets
+          cp /tmp/src/logo.png assets/logo.png 2>/dev/null || true
+          cp /tmp/src/main.dart lib/main.dart
+          
+          # قرار دادن مانیفست صحیح و استاندارد اندروید با مجوز اینترنت
+          cat << 'EOF' > android/app/src/main/AndroidManifest.xml
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <application
+                  android:label="محفل اُنس"
+                  android:name="${applicationName}"
+                  android:icon="@mipmap/ic_launcher">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:launchMode="singleTop"
+                      android:theme="@style/LaunchTheme"
+                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+                      android:hardwareAccelerated="true"
+                      android:windowSoftInputMode="adjustResize">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
 
-      - name: Get Dependencies
-        run: flutter pub get
-
-      - name: Build APK
-        run: flutter build apk --release
+          flutter pub get
+          flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Mahfel-Ons-App
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: mahfel_build/build/app/outputs/flutter-apk/app-release.apk
