@@ -23,51 +23,26 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Setup Project and Build APK
-        run: |
-          mkdir -p /tmp/src
-          cp pubspec.yaml main.dart logo.png /tmp/src/ 2>/dev/null || true
-          
-          # ساخت یک پروژه خام فلاتر
-          flutter create mahfel_build --org ir.shiravi --project-name mahfel_ons --platforms=android
-          cd mahfel_build
-          
-          # انتقال کدهای اصلی و تنظیمات
-          cp /tmp/src/pubspec.yaml ./pubspec.yaml
-          mkdir -p assets
-          cp /tmp/src/logo.png assets/logo.png 2>/dev/null || true
-          cp /tmp/src/main.dart lib/main.dart
-          
-          # قرار دادن مانیفست صحیح و استاندارد اندروید با مجوز اینترنت
-          cat << 'EOF' > android/app/src/main/AndroidManifest.xml
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.INTERNET"/>
-              <application
-                  android:label="محفل اُنس"
-                  android:name="${applicationName}"
-                  android:icon="@mipmap/ic_launcher">
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:launchMode="singleTop"
-                      android:theme="@style/LaunchTheme"
-                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-                      android:hardwareAccelerated="true"
-                      android:windowSoftInputMode="adjustResize">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          EOF
+      - name: Create Flutter Project
+        run: flutter create app_build --org ir.shiravi --project-name mahfel_ons --platforms=android
 
-          flutter pub get
-          flutter build apk --release
+      - name: Copy Project Files
+        run: |
+          cd app_build
+          cp ../pubspec.yaml pubspec.yaml
+          cp ../main.dart lib/main.dart
+          mkdir -p assets
+          if [ -f ../logo.png ]; then cp ../logo.png assets/logo.png; else cp android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png assets/logo.png; fi
+          cp ../AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+
+      - name: Get Dependencies
+        run: cd app_build && flutter pub get
+
+      - name: Build APK
+        run: cd app_build && flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Mahfel-Ons-App
-          path: mahfel_build/build/app/outputs/flutter-apk/app-release.apk
+          path: app_build/build/app/outputs/flutter-apk/app-release.apk
