@@ -23,23 +23,24 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Create Flutter Project
-        run: flutter create app_build --org ir.shiravi --project-name mahfel_ons --platforms=android
-
-      - name: Copy Project Files
+      - name: Build Project
         run: |
+          # ۱. ساخت پروژه تمیز با ساختار مدرن فلاتر
+          flutter create app_build --org ir.shiravi --project-name mahfel_ons --platforms=android
           cd app_build
-          cp ../pubspec.yaml pubspec.yaml
+
+          # ۲. جایگزینی کدهای برنامه
+          cp ../pubspec.yaml ./pubspec.yaml
           cp ../main.dart lib/main.dart
           mkdir -p assets
           if [ -f ../logo.png ]; then cp ../logo.png assets/logo.png; else cp android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png assets/logo.png; fi
-          cp ../AndroidManifest.xml android/app/src/main/AndroidManifest.xml
 
-      - name: Get Dependencies
-        run: cd app_build && flutter pub get
+          # ۳. اضافه کردن مجوز اینترنت به مانیفست پیش‌فرض
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
 
-      - name: Build APK
-        run: cd app_build && flutter build apk --release
+          # ۴. دانلود پکیج‌ها و ساخت نهایی APK
+          flutter pub get
+          flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
