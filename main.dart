@@ -1,7 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,9 +22,7 @@ class MahfelOnsApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'محفل اُنس',
       locale: const Locale('fa', 'IR'),
-      supportedLocales: const [
-        Locale('fa', 'IR'),
-      ],
+      supportedLocales: const [Locale('fa', 'IR')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -53,6 +56,24 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
   late final WebViewController _booksController;
   late final WebViewController _articlesController;
 
+  // کدهای CSS برای باز کردن اسامی مخفی و بریده‌شده فایل‌ها در ایتا
+  final String _fixFileTitlesCss = '''
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .tgme_widget_message_document_title,
+      .document_title,
+      .media_document_title,
+      .tgme_widget_message_text {
+        white-space: normal !important;
+        text-overflow: unset !important;
+        overflow: visible !important;
+        word-break: break-word !important;
+        display: block !important;
+      }
+    `;
+    document.head.appendChild(style);
+  ''';
+
   @override
   void initState() {
     super.initState();
@@ -61,7 +82,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
   }
 
   WebViewController _createController(String url) {
-    return WebViewController()
+    final controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF0B2B3A))
       ..setUserAgent(
@@ -73,26 +94,34 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
           },
           onPageFinished: (String currentUrl) {
             if (mounted) setState(() => _isLoading = false);
+            // تزریق استایل برای نمایش کامل عناوین بلند
+            if (_selectedIndex == 0) {
+              _booksController.runJavaScript(_fixFileTitlesCss);
+            } else {
+              _articlesController.runJavaScript(_fixFileTitlesCss);
+            }
           },
           onNavigationRequest: (NavigationRequest request) {
             final targetUrl = request.url;
 
-            // باز کردن لینک‌های اپلیکیشن ایتا در برنامه ایتا
             if (targetUrl.startsWith('et://') || targetUrl.startsWith('eitaa://')) {
               _launchExternal(targetUrl);
               return NavigationDecision.prevent;
             }
 
-            // باز کردن فایل‌های پی‌دی‌اف و دانلودها در دانلودر/نمایشگر گوشی
-            if (targetUrl.toLowerCase().contains('.pdf') ||
-                targetUrl.toLowerCase().contains('.apk') ||
-                targetUrl.toLowerCase().contains('.zip') ||
-                targetUrl.toLowerCase().contains('.rar')) {
-              _launchExternal(targetUrl);
+            // رهگیری پسوندهای اسناد جهت دانلود و بازگشایی
+            final lower = targetUrl.toLowerCase();
+            if (lower.endsWith('.pdf') ||
+                lower.endsWith('.doc') ||
+                lower.endsWith('.docx') ||
+                lower.endsWith('.zip') ||
+                lower.endsWith('.rar') ||
+                lower.contains('download=true') ||
+                lower.contains('/download/')) {
+              _downloadAndOpen(targetUrl);
               return NavigationDecision.prevent;
             }
 
-            // تفکیک صفحات داخلی از لینک‌های خارجی
             final isInternal = targetUrl.contains('eitaa.com/ketab_shiravi') ||
                 targetUrl.contains('eitaa.com/maghaleh_shiravi') ||
                 targetUrl.contains('eitaa.com/m/');
@@ -105,8 +134,81 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
             return NavigationDecision.navigate;
           },
         ),
-      )
-      ..loadRequest(Uri.parse(url));
+      );
+
+    // فعال‌سازی شنونده دانلود بومی اندروید
+    if (controller.platform is AndroidWebViewController) {
+      final androidController = controller.platform as AndroidWebViewController;
+      androidController.setOnPlatformDownloadStart((url, userAgent, contentDisposition, mimetype, contentLength) {
+        _downloadAndOpen(url, suggestedFileName: _extractFileName(contentDisposition, url));
+      });
+    }
+
+    controller.loadRequest(Uri.parse(url));
+    return controller;
+  }
+
+  // استخراج هوشمند نام فایل از هدر یا لینک
+  String _extractFileName(String? disposition, String url) {
+    if (disposition != null && disposition.contains('filename=')) {
+      try {
+        final match = RegExp(r'''filename[^;=\n]*=((['"]).*?\2|[^;\n]*)''').firstMatch(disposition);
+        if (match != null && match.group(1) != null) {
+          return match.group(1)!.replaceAll('"', '').trim();
+        }
+      } catch (_) {}
+    }
+    final uri = Uri.tryParse(url);
+    if (uri != null && uri.pathSegments.isNotEmpty) {
+      return uri.pathSegments.last;
+    }
+    return 'document_${DateTime.now().millisecondsSinceEpoch}.pdf';
+  }
+
+  // فرآیند دانلود و باز کردن مستقیم در اندروید
+  Future<void> _downloadAndOpen(String fileUrl, {String? suggestedFileName}) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const AlertDialog(
+        backgroundColor: Color(0xFF133B4F),
+        content: Row(
+          children: [
+            CircularProgressIndicator(color: Color(0xFF1ABC9C)),
+            SizedBox(width: 20),
+            Expanded(
+              child: Text(
+                'در حال دریافت و بازگشایی فایل...',
+                style: TextStyle(color: Colors.white, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final response = await http.get(Uri.parse(fileUrl));
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+
+      if (response.statusCode == 200) {
+        final dir = await getTemporaryDirectory();
+        final fileName = suggestedFileName ?? _extractFileName(null, fileUrl);
+        final file = File('${dir.path}/$fileName');
+        await file.writeAsBytes(response.bodyBytes);
+
+        // بازگشایی مستقیم در گوشی
+        final result = await OpenFilex.open(file.path);
+        if (result.type != ResultType.done) {
+          _launchExternal(fileUrl);
+        }
+      } else {
+        _launchExternal(fileUrl);
+      }
+    } catch (e) {
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+      _launchExternal(fileUrl);
+    }
   }
 
   Future<void> _launchExternal(String url) async {
@@ -118,7 +220,6 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
     }
   }
 
-  // دیالوگ جستجو
   void _showSearchDialog() {
     final searchController = TextEditingController();
     showDialog(
@@ -166,7 +267,6 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
     );
   }
 
-  // پنل ارتباط با ما
   void _showContactUsModal() {
     showModalBottomSheet(
       context: context,
@@ -212,7 +312,6 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
     );
   }
 
-  // پنل درباره ما (زندگینامه و کارنامه علمی استاد)
   void _showAboutUsDialog() {
     showDialog(
       context: context,
