@@ -25,21 +25,20 @@ jobs:
 
       - name: Build Project
         run: |
-          # ۱. ساخت پروژه تمیز با ساختار استاندارد فلاتر
-          تمیز با ساختار استاندارد فلاتر
-          mahfel_ons --platforms=android
+          # 1. Create a clean standard Flutter project
+          flutter create app_build --org ir.shiravi --project-name mahfel_ons --platforms=android
           cd app_build
 
-          # ۲. جایگزینی کدهای برنامه (فایل‌ها در ریشه مخزن هستند)
+          # 2. Copy app source files from repo root
           cp ../pubspec.yaml ./pubspec.yaml
           cp ../main.dart lib/main.dart
           mkdir -p assets
           cp ../logo.png assets/logo.png
 
-          # ۳. اضافه کردن مجوز اینترنت به مانیفست پیش‌فرض
+          # 3. Add INTERNET permission to the default AndroidManifest
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
 
-          # ۴. دانلود پکیج‌ها و ساخت نهایی APK
+          # 4. Fetch packages and build the release APK
           flutter pub get
           flutter build apk --release
 
