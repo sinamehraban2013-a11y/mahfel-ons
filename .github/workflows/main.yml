@@ -25,15 +25,16 @@ jobs:
 
       - name: Build Project
         run: |
-          # ۱. ساخت پروژه تمیز با ساختار مدرن فلاتر
-          flutter create app_build --org ir.shiravi --project-name mahfel_ons --platforms=android
+          # ۱. ساخت پروژه تمیز با ساختار استاندارد فلاتر
+          تمیز با ساختار استاندارد فلاتر
+          mahfel_ons --platforms=android
           cd app_build
 
-          # ۲. جایگزینی کدهای برنامه
+          # ۲. جایگزینی کدهای برنامه (فایل‌ها در ریشه مخزن هستند)
           cp ../pubspec.yaml ./pubspec.yaml
           cp ../main.dart lib/main.dart
           mkdir -p assets
-          if [ -f ../logo.png ]; then cp ../logo.png assets/logo.png; else cp android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png assets/logo.png; fi
+          cp ../logo.png assets/logo.png
 
           # ۳. اضافه کردن مجوز اینترنت به مانیفست پیش‌فرض
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
