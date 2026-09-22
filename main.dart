@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -34,13 +33,14 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
+  bool _isLoading = false;
 
   late final WebViewController _bookController;
-  late final WebViewController _ late final WebViewController _bookController;
-  late final WebViewController _ @override
+  late final WebViewController _maghalehController;
+
+  @override
   void initState() {
     super.initState();
-
     _bookController = _makeController('https://eitaa.com/ketab_shiravi');
     _maghalehController = _makeController('https://eitaa.com/maghaleh_shiravi');
   }
@@ -50,7 +50,7 @@ class _HomePageState extends State<HomePage> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF0B2B3A))
       ..setUserAgent(
-          'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36')
+          'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36')
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
@@ -62,24 +62,24 @@ class _HomePageState extends State<HomePage> {
           onNavigationRequest: (request) {
             final url = request.url;
 
-            // لینک‌های مخصوص اپ ایتا (مثل دکمه پیوستن) → باز کردن خارج از اپ
+            // مدیریت دکمه پیوستن و لینک‌های داخلی ایتا
             if (url.startsWith('et://') || url.startsWith('eitaa://')) {
-              _openExternal('https://eitaa.com/ketab_shiravi');
+              _openExternal(url);
               return NavigationDecision.prevent;
             }
 
-            // لینک‌های غیر وب (intent و...) → بیرون از اپ
+            // مدیریت لینک‌های سیستمی و غیروب
             if (!url.startsWith('http://') && !url.startsWith('https://')) {
               _openExternal(url);
               return NavigationDecision.prevent;
             }
 
-            // لینک فایل‌ها و پیوست‌ها → واگذار به مرورگر گوشی برای دانلود
-            final isChannelPage = url.startsWith('https://eitaa.com/m/') ||
-                url.startsWith('https://eitaa.com/ketab_shiravi') ||
-                url.startsWith('https://eitaa.com/maghaleh_shiravi');
+            // باز کردن لینک‌های دانلود و صفحات جانبی در مرورگر گوشی
+            final isInternalPage = url.contains('eitaa.com/ketab_shiravi') ||
+                url.contains('eitaa.com/maghaleh_shiravi') ||
+                url.contains('eitaa.com/m/');
 
-            if (!isChannelPage) {
+            if (!isInternalPage) {
               _openExternal(url);
               return NavigationDecision.prevent;
             }
@@ -96,18 +96,17 @@ class _HomePageState extends State<HomePage> {
     if (uri == null) return;
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {
-      // اگر اپ ایتا نصب نبود، بی‌صدا رد شویم
-    }
+    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('محفل اُنس',
-            style: TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'محفل اُنس',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: const Color(0xFF0B2B3A),
         centerTitle: true,
       ),
@@ -123,8 +122,7 @@ class _HomePageState extends State<HomePage> {
           if (_isLoading)
             const Center(
               child: CircularProgressIndicator(
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(Color(0xFF1ABC9C)),
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1ABC9C)),
               ),
             ),
         ],
@@ -132,7 +130,8 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
-        backgroundColor: const Color(0xFF0B2B3A:        selectedItemColor: const Color(0xFF1ABC9C),
+        backgroundColor: const Color(0xFF0B2B3A),
+        selectedItemColor: const Color(0xFF1ABC9C),
         unselectedItemColor: Colors.white54,
         items: const [
           BottomNavigationBarItem(
