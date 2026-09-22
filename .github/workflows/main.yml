@@ -23,12 +23,16 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Organize Flutter Project Structure
+      - name: Prepare Project Structure
         run: |
+          mkdir temp_src
+          cp pubspec.yaml main.dart logo.png temp_src/ || true
+          flutter create . --org ir.shiravi --project-name mahfelons --empty --platforms=android
+          cp temp_src/pubspec.yaml .
           mkdir -p lib assets
-          if [ -f main.dart ]; then mv main.dart lib/; fi
-          if [ -f logo.png ]; then mv logo.png assets/; fi
-          flutter create . --org ir.shiravi --project-name mahfelons --platforms=android
+          cp temp_src/main.dart lib/main.dart
+          cp temp_src/logo.png assets/logo.png
+          sed -i '/<application/a \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml || true
 
       - name: Get Dependencies
         run: flutter pub get
