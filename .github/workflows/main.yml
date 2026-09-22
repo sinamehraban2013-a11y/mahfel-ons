@@ -1,4 +1,3 @@
-yaml
 name: Build Mahfel Ons APK
 
 on:
@@ -24,8 +23,12 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Generate Native Android Files
-        run: flutter create . --org ir.shiravi --project-name mahfelons
+      - name: Organize Flutter Project Structure
+        run: |
+          mkdir -p lib assets
+          if [ -f main.dart ]; then mv main.dart lib/; fi
+          if [ -f logo.png ]; then mv logo.png assets/; fi
+          flutter create . --org ir.shiravi --project-name mahfelons --platforms=android
 
       - name: Get Dependencies
         run: flutter pub get
