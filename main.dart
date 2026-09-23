@@ -165,14 +165,9 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
       final androidController =
           controller.platform as AndroidWebViewController;
 
-      androidController.setOnDownloadStart(
-        (String url, String userAgent, String contentDisposition, String mimetype, int contentLength) {
-          _downloadAndOpen(
-            url,
-            suggestedFileName: _extractFileName(contentDisposition, url),
-          );
-        },
-      );
+      androidController.setOnDownloadStart((String url) {
+        _downloadAndOpen(url);
+      });
     }
 
     controller.loadRequest(Uri.parse(url));
@@ -230,13 +225,8 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
     return 'document_${DateTime.now().millisecondsSinceEpoch}.pdf';
   }
 
-  Future<void> _downloadAndOpen(
-    String fileUrl, {
-    String? suggestedFileName,
-  }) async {
+  Future<void> _downloadAndOpen(String fileUrl) async {
     if (!mounted) return;
-
-    bool dialogIsOpen = true;
 
     showDialog(
       context: context,
@@ -274,19 +264,14 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
 
       final response = await http.get(uri);
 
-      if (mounted && dialogIsOpen) {
-        dialogIsOpen = false;
+      if (mounted) {
         Navigator.of(context, rootNavigator: true).pop();
       }
 
       if (response.statusCode == 200) {
         final dir = await getTemporaryDirectory();
 
-        var fileName = suggestedFileName;
-
-        if (fileName == null || fileName.trim().isEmpty) {
-          fileName = _extractFileName(null, fileUrl);
-        }
+        var fileName = _extractFileName(null, fileUrl);
 
         fileName = fileName.replaceAll('/', '_');
         fileName = fileName.replaceAll('\\', '_');
@@ -307,8 +292,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
         await _launchExternal(fileUrl);
       }
     } catch (_) {
-      if (mounted && dialogIsOpen) {
-        dialogIsOpen = false;
+      if (mounted) {
         Navigator.of(context, rootNavigator: true).pop();
       }
 
