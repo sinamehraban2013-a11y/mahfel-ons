@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:open_filex/open_filex.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 // ==========================================
@@ -59,7 +60,74 @@ class MahfelOnsApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
-      home: const HomeScreen(),
+      home: const SplashScreen(),
+    );
+  }
+}
+
+// ==========================================
+// صفحه شروع: نمایش لوگوی متحرک به مدت ۴ ثانیه
+// ==========================================
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Timer(const Duration(seconds: 4), () {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B2B3A),
+      body: Center(
+        child: Image.asset(
+          'mahfel_ons_animation.gif',
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
+  }
+}
+
+// ==========================================
+// نمایشگر PDF داخلی (حس ورق زدن کتاب)
+// ==========================================
+class PdfViewerScreen extends StatelessWidget {
+  final File file;
+  final String title;
+
+  const PdfViewerScreen({super.key, required this.file, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          title,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        centerTitle: true,
+      ),
+      body: SfPdfViewer.file(
+        file,
+        canShowScrollHead: true,
+      ),
     );
   }
 }
@@ -133,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(width: 20),
             Expanded(
               child: Text(
-                'در حال دریافت و بازگشایی فایل...',
+                'در حال دریافت کتاب...',
                 style: TextStyle(color: Colors.white, fontSize: 13),
               ),
             ),
@@ -154,10 +222,13 @@ class _HomeScreenState extends State<HomeScreen> {
         final file = File('${dir.path}/${doc.id}.pdf');
         await file.writeAsBytes(response.bodyBytes, flush: true);
 
-        final result = await OpenFilex.open(file.path);
-        if (result.type != ResultType.done) {
-          await _launchExternal(downloadUrl);
-        }
+        // باز کردن PDF در داخل برنامه (بدون نرم‌افزار جانبی)
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PdfViewerScreen(file: file, title: doc.name),
+          ),
+        );
       } else {
         await _launchExternal(downloadUrl);
       }
@@ -190,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(Icons.info_outline, color: Color(0xFF1ABC9C)),
                   SizedBox(width: 8),
                   Text(
-                    'درباره استاد محمدمهدی شیروی',
+                    'درباره ما',
                     style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -199,27 +270,11 @@ class _HomeScreenState extends State<HomeScreen> {
               const Expanded(
                 child: SingleChildScrollView(
                   child: Text(
-                    'استاد "محمدمهدی شیروی خوزانی" مفسّر قرآن کریم، استاد اخلاق و معارف الهی\n\n'
-                    'در نهم فروردین‌ماه سال ۱۳۳۸، در شهرستان خمینی‌شهر (سده) از توابع استان اصفهان، دیده به جهان گشودند. از چهار سالگی، سه سال را در مکتب‌های سنتی محل گذراندند و سپس دوره ششم ابتدایی را در «مدرسه ملی شهر» به پایان رساندند.\n\n'
-                    'فضای اجتماعی آن دوران سبب شد که از همان کودکی به کار و تلاش روی آورند. از جمله فعالیت‌های ایشان می‌توان به شاگردی در خیاطی، کارگری در کارخانه ریسندگی، همکاری در مغازه، کشاورزی در کنار پدر، و نیز کارگری در کارخانه سنگ‌بری و نصب سنگ نما اشاره کرد.\n\n'
-                    'در سال‌های اشتغال به کار سنگ، علاقه‌مندی به علوم دینی در ایشان پدید آمد. سرانجام در سال ۱۳۵۷، به مدرسه علمیه مشکاة در زادگاه خود راه یافتند و به تحصیل جامع‌المقدمات پرداختند. روحیه جست‌وجوگر و عطش دانایی، ایشان را بر آن داشت تا در مدت کوتاهی، کتاب‌های متعددی را مطالعه کنند و به‌طور خودآموخته با شاخه‌های گوناگون علمی آشنا شوند.\n\n'
-                    'با پیروزی انقلاب اسلامی و آغاز جنگ تحمیلی در سال ۱۳۵۹، وظیفه دفاع از میهن را بر خود لازم دانستند و به عضویت سپاه پاسداران انقلاب اسلامی درآمدند. در این دوران، مسئولیت‌هایی همچون عملیات، اعزام نیرو، و مربیگری عقیدتی ـ سیاسی را بر عهده داشتند.\n\n'
-                    'شوق یادگیری علوم و معارف الهی سبب شد که پس از چهار سال خدمت در سپاه، در سال ۱۳۶۳ برای ادامه تحصیل رسمی دروس حوزوی، عازم شهر قم شوند. به‌واسطه آمادگی علمی پیشین، استعداد خدادادی و پشتکار مثال‌زدنی، در سال ۱۳۶۷ دوره سطح حوزه را به پایان رساندند و مدتی نیز از محضر درس خارج استادان برجسته حوزه علمیه قم بهره بردند.\n\n'
-                    'با پایان یافتن جنگ و تحصیلات حوزوی، تصمیم گرفتند در عرصه تعلیم و تربیت نقش‌آفرینی کنند. بر اساس نیاز و دعوت برخی دلسوزان، در سال ۱۳۶۸ به تهران هجرت کردند و تا سال ۱۳۸۰ به‌عنوان استاد دروس عمومی در دانشگاه علوم پزشکی ایران به تدریس پرداختند. هم‌زمان، در دفتر نمایندگی ولی‌فقیه و سپس به‌عنوان رابط فرهنگی دفتر نهاد مقام معظم رهبری در دانشگاه، و نیز به‌عنوان امام جماعت مساجد مختلف فعالیت داشتند. از آن زمان تاکنون، در کسوت روحانیت، به هدایت، تربیت دینی و خدمت به مردم اشتغال دارند.\n\n'
-                    'در سال ۱۳۷۸، بی‌آنکه پیش‌تر تجربه یا آموزشی در عرصه شعر داشته باشند، قریحه شعری ایشان شکوفا شد و با عنایتی خاص، جرقه تفسیر منظوم سوره یوسف زده شد؛ آغازی برای تألیف مجموعه گرانسنگ «تفسیر معنوی» که تاکنون ۲۸ سوره از قرآن کریم را در قالب مثنوی و با شیوه‌ای نوین به نظم کشیده‌اند. از این مجموعه، سه جلد منتشر شده و سایر مجلدات آماده چاپ است.\n\n'
-                    'سوره‌های مبارکه یوسف، نور، ابراهیم، مریم، کوثر، یٰس، فرقان، حجرات، کهف، انبیاء، الرحمن، شمس، نوح، جمعه، حمد، عادیات، عصر، نمل، ناس، عنکبوت، قلم، حج، زلزال، انسان، توحید، اسراء، نحل و بقره از جمله این آثارند. در خلال تفسیر سوره توحید، شرح و تفسیر دعای شریف جوشن کبیر نیز ارائه شده است. حاصل این تلاش‌ها تاکنون بیش از ۱۵۰هزار بیت شعر در قالب «تفسیر معنوی قرآن» است.\n\n'
-                    'این مجموعه، آمیزه‌ای است از واژگان قرآنی، تأملات فلسفی ـ عرفانی، و پیوند آن با معارف اهل‌بیت علیهم‌السلام و «قرآن صاعد» که در عین زیبایی و لطافت، از استحکام علمی و معنوی برخوردار است. ویژگی ممتاز این آثار، آن است که هر خواننده با مطالعه چند آیه نخست، شیفته آن می‌شود.\n\n'
-                    'از دیگر آثار ایشان، مجموعه کتاب‌های «هزاران فکر عمیق» است که تاکنون بیش از هفت هزار نکته حکیمانه در آن گرد آمده و پنج جلد آن منتشر شده است. همچنین، کانال‌های «فکر عمیق» و «محفل انس» در پیام‌رسان‌های تلگرام، بله، ایتا و سروش فعال‌اند و مجموعه‌ای از سخنان حکیمانه، عکس‌نوشته‌ها و بیش از دوهزار فایل صوتی در موضوعات گوناگون را در بر دارند.\n\n'
-                    'مجموعه «پرسمان» نیز حاصل سال‌ها پرسش و پاسخ میان اقشار مختلف مردم و ایشان در پیام‌رسان‌هایی چون تلگرام، واتساپ، بله و ایتا است که همچنان ادامه دارد.\n\n'
-                    'دیگر آثار منظوم ایشان شامل:\n'
-                    '• شرح و تفسیر نامه مبارک امیرالمؤمنین علیه‌السلام به مالک اشتر در قالب مثنوی (حدود ۲۰۰۰ بیت)\n'
-                    '• شرح دعای هفتم صحیفه سجادیه (بیش از ۱۰۰۰ بیت، آماده چاپ)\n'
-                    '• شرح برخی از مناجات‌های خمس عشر به شیوه شعری\n'
-                    '• سرودن بیش از ۲۰۰۰ بیت دوبیتی و حدود ۱۰۰۰ بیت غزل\n\n'
-                    'مجموعه مکتوب جلسات «محفل انس» و سخنرانی‌های بیش از بیست سال گذشته، که کتاب‌هایی چون «شب‌های رمضان»، «روح»، «نماز» و «توحید» از آن جمله‌اند و در دست آماده‌سازی برای چاپ می‌باشند.\n\n'
-                    'از خداوند متعال، طول عمر با عزت و توفیقات روزافزون برای این عالم ربانی و بهره‌مندی هرچه بیشتر دوستداران معارف الهی از محضر این گنجینه گران‌بها را خواستاریم.\n\n'
-                    '«این قلم را آل یاسین داده است\n'
-                    'شکر حق، از بای تا سین داده است»',
+                    'محفلِ اُنس؛ تلاقیِ آگاهی و آرامش\n\n'
+                    'در هیاهوی جهانِ مدرن، «محفلِ اُنس» دعوتی است به بازگشت؛ بازگشتی آگاهانه به سرچشمه‌های وحیانی و اصیل. ما در این مجموعه برآنیم تا با نگاهی برآمده از پژوهش‌های دقیقِ متن‌شناختی و هرمنوتیکی، پلی میانِ میراثِ غنیِ دینی و نیازهای مخاطبِ امروز برقرار کنیم.\n\n'
+                    'دغدغه‌ی ما در «محفلِ اُنس»، فراتر از انتقالِ صرفِ داده‌هاست. ما با رویکردی متمرکز بر «رحمانیت»، تلاش کرده‌ایم بستری را فراهم آوریم که در آن، مفاهیم عمیقِ عاشورایی و کلامِ وحی، نه به عنوانِ متونی دور، بلکه به مثابه راهکارهایی زنده و کاربردی برای تعالیِ فردی و اجتماعی درک شوند.\n\n'
+                    'این اپلیکیشن، حاصلِ تلاشی مستمر برای ساختارمند کردنِ فرآیندِ «اُنس» با کلام است؛ جایی که دقتِ علمی با لطافتِ معنوی گره می‌خورد تا تجربه‌ای متفاوت از تعامل با متونِ قدسی را برای شما رقم بزند. امیدواریم «محفلِ اُنس»، چراغِ راهی در مسیرِ جستجویِ معنا و آرامشِ پایدار باشد.\n\n'
+                    'با احترام،\nتیمِ توسعه و پژوهشِ محفلِ اُنس',
                     style: TextStyle(color: Colors.white70, fontSize: 13.5, height: 1.8),
                     textAlign: TextAlign.justify,
                   ),
@@ -240,6 +295,54 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showFeedbackDialog() {
+    final TextEditingController feedbackController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F3244),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'ارسال نظر و انتقاد',
+          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        content: TextField(
+          controller: feedbackController,
+          maxLines: 5,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'متن نظر خود را بنویسید...',
+            hintStyle: TextStyle(color: Colors.white38),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF1ABC9C))),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('انصراف', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1ABC9C)),
+            onPressed: () Uri emailLaunchUri = Uri(
+                  scheme: 'mailto if (text.isNotEmpty) {
+                final Uri emailLaunchUri = Uri(
+                  scheme: 'mailto',
+                  path: 'm_khozani@yahoo.com',
+                  query: 'subject=${Uri.encodeComponent('نظر کاربر اپلیکیشن محفل اُنس')}&body=${Uri.encodeComponent(text)}',
+                );
+                Navigator.pop(ctx);
+                await launchUrl(emailLaunchUri);
+              }
+            },
+            child: const Text('ارسال', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }
@@ -280,6 +383,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 _launchExternal('https://eitaa.com/shiravi_ir');
               },
             ),
+            const Divider(color: Colors.white12),
+            ListTile(
+              leading: const Icon(Icons.psychology_alt_rounded, color: Color(0xFF1ABC9C), size: 28),
+              title: const Text('پاسخ به پرسش‌های سخت', style: TextStyle(color: Colors.white)),
+              subtitle: const Text('گروه پرسش و پاسخ در پیام‌رسان بله', style: TextStyle(color: Colors.white70)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _launchExternal('https://ble.ir/join/NGMyZGI5OT');
+              },
+            ),
+            const Divider(color: Colors.white12),
+            ListTile(
+              leading: const Icon(Icons.email_rounded, color: Color(0xFF1ABC9C), size: 28),
+              title: const Text('ارسال نظر و انتقاد', style: TextStyle(color: Colors.white)),
+              subtitle: const Text('پیام شما مستقیماً به استاد می‌رسد', style: TextStyle(color: Colors.white70)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showFeedbackDialog();
+              },
+            ),
           ],
         ),
       ),
@@ -287,9 +410,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _getAppBarTitle() {
-    if (_selectedIndex == 0) return 'کتاب‌های دکتر شیروی';
-    if (_selectedIndex == 1) return 'مقالات دکتر شیروی';
-    return 'تست شخصیت‌شناسی MBTI';
+    if (_selectedIndex == 0) return 'کتب در محفل انس';
+    if (_selectedIndex == 1) return 'مقالات در محفل انس';
+    return 'تست خودارزیابی MBTI';
   }
 
   @override
@@ -352,7 +475,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Icon(Icons.info_outline, color: Color(0xFF1ABC9C), size: 20),
                     SizedBox(width: 10),
-                    Text('درباره استاد', style: TextStyle(color: Colors.white)),
+                    Text('درباره ما', style: TextStyle(color: Colors.white)),
                   ],
                 ),
               ),
@@ -446,7 +569,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                     trailing: const Icon(
-                                      Icons.file_download_outlined,
+                                      Icons.chrome_reader_mode_outlined,
                                       color: Color(0xFF1ABC9C),
                                       size: 24,
                                     ),
@@ -485,7 +608,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.psychology_rounded),
-              label: 'تست شخصیت‌شناسی',
+              label: 'تست خودارزیابی',
             ),
           ],
         ),
@@ -659,8 +782,7 @@ class _MbtiQuizScreenState extends State<MbtiQuizScreen> {
     }
 
     final String res = (countE >= countI ? 'E' : 'I') +
-        (countS >= countN ? 'S' : 'N') +
-        (countT >= countF ? 'T' : 'F') +
+        (countS >= countN ? 'S' : 'N 'F        (countT >= countF ? 'T' : 'F') +
         (countJ >= countP ? 'J' : 'P');
 
     setState(() {
@@ -778,8 +900,8 @@ class _MbtiQuizScreenState extends State<MbtiQuizScreen> {
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 7,
-                  backgroundColor: Colors.white12,
-                  color: const Color(0xFF1ABC9C),
+                  backgroundColor: Colors.white12              ),
+ color: const Color(0xFF1ABC9C),
                 ),
               ),
             ],
@@ -879,8 +1001,10 @@ class _MbtiQuizScreenState extends State<MbtiQuizScreen> {
                                 child: Text(
                                   q.optB,
                                   style: TextStyle(
-                                    color: currentAns == q.typeB ? Colors.white : Colors.white70,
+                                    color: currentAns == q.typeB,
                                     fontSize: 13.5,
+                                  ),
+ 13.5,
                                   ),
                                 ),
                               ),
