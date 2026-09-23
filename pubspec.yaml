@@ -9,11 +9,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   http: ^1.2.0
   path_provider: ^2.1.2
-  open_filex: ^4.3.2
   url_launcher: ^6.2.4
-  syncfusion_flutter_pdfviewer: ^24.2.3  # این خط را حتماً اضافه کنید
+  syncfusion_flutter_pdfviewer: ^24.2.3
 
 flutter:
   uses-material-design: true
