@@ -1,3 +1,4 @@
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -13,8 +14,8 @@ import 'package:url_launcher/url_launcher.dart';
 // ==========================================
 const String scriptApiUrl =
     'https://script.google.com/macros/s/AKfycbwBLyDbJu78M_nxaZtfcfFtd6DSMp6yl3Lu2lPOPwimuDynqGN8cTvZr4JpN3eJhxGA/exec';
-const String ketabFolderId = '1g3o3Q9tZ9v2k_ExampleKetabId';
-const String maghalehFolderId = '1h4p4R0uA0w3l_ExampleMaghalehId';
+const String ketabFolderId = '1R2iM-PbRDY9gp7LPBGcKFBO9B5rsPt71';
+const String maghalehFolderId = '1SJ1dS0XAnXwr4WGQPwlcpUJCFDy_T2Ir';
 // ==========================================
 
 void main() {
@@ -65,9 +66,6 @@ class MahfelOnsApp extends StatelessWidget {
   }
 }
 
-// ==========================================
-// صفحه شروع: نمایش لوگوی متحرک به مدت ۴ ثانیه
-// ==========================================
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -132,9 +130,6 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-// ==========================================
-// نمایشگر PDF داخلی (حس ورق زدن کتاب)
-// ==========================================
 class PdfViewerScreen extends StatelessWidget {
   final File file;
   final String title;
@@ -192,8 +187,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      final booksRes = await http.get(Uri.parse('$scriptApiUrl?folderId=$ketabFolderId'));
-      final articlesRes = await http.get(Uri.parse('$scriptApiUrl?folderId=$maghalehFolderId'));
+      // استفاده از متد استاندارد Uri برای ساخت آدرس با پارامتر
+      final booksUri = Uri.parse(scriptApiUrl).replace(queryParameters: {'folderId': ketabFolderId});
+      final articlesUri = Uri.parse(scriptApiUrl).replace(queryParameters: {'folderId': maghalehFolderId});
+
+      final booksRes = await http.get(booksUri);
+      final articlesRes = await http.get(articlesUri);
 
       if (booksRes.statusCode == 200 && articlesRes.statusCode == 200) {
         final List<dynamic> booksJson = json.decode(booksRes.body);
@@ -206,13 +205,13 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       } else {
         setState(() {
-          _errorMessage = 'خطا در ارتباط با سرور ابری گوگل';
+          _errorMessage = 'خطا در ارتباط با سرور ابری (کد: ${booksRes.statusCode})';
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'خطا در اتصال به اینترنت یا دریافت اطلاعات';
+        _errorMessage = 'خطای اتصال به اینترنت';
         _isLoading = false;
       });
     }
@@ -229,10 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
             CircularProgressIndicator(color: Color(0xFF1ABC9C)),
             SizedBox(width: 20),
             Expanded(
-              child: Text(
-                'در حال دریافت کتاب...',
-                style: TextStyle(color: Colors.white, fontSize: 13),
-              ),
+              child: Text('در حال دریافت کتاب...', style: TextStyle(color: Colors.white, fontSize: 13)),
             ),
           ],
         ),
@@ -243,7 +239,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final response = await http.get(Uri.parse(downloadUrl));
-
       if (mounted) Navigator.of(context, rootNavigator: true).pop();
 
       if (response.statusCode == 200) {
@@ -254,9 +249,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (!mounted) return;
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => PdfViewerScreen(file: file, title: doc.name),
-          ),
+          MaterialPageRoute(builder: (_) => PdfViewerScreen(file: file, title: doc.name)),
         );
       } else {
         await _launchExternal(downloadUrl);
@@ -273,7 +266,6 @@ class _HomeScreenState extends State<HomeScreen> {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
-
   void _showAboutUsDialog() {
     showDialog(
       context: context,
