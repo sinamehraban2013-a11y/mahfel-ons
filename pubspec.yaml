@@ -1,21 +1,30 @@
 name: mahfel_ons
-description: اپلیکیشن محفل انس برای نمایش کانال‌های ایتا و دانلود فایل‌ها
-publish_to: "none"
+description: "اپلیکیشن محفل انس - استاد محمدمهدی شیروی خوزانی"
+publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.3.0 <4.0.0"
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
-  cupertino_icons: ^1.0.8
-  webview_flutter: ^4.10.0
+  # پکیج وب‌ویو برای نمایش کانال‌ها
+  webview_flutter: ^4.8.0
+  webview_flutter_android: ^4.1.0
+
+  # پکیج‌های دانلود و بازگشایی مستقیم فایل‌ها
+  url_launcher: ^6.3.0
   http: ^1.2.0
-  path_provider: ^2.1.0
-  open_filex: ^4.4.0
+  path_provider: ^2.1.4
+  open_filex: ^4.5.0
+
+  # آیکون‌های استاندارد
+  cupertino_icons: ^1.0.8
 
 dev_dependencies:
   flutter_test:
@@ -24,6 +33,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
-  assets:
-    - assets/logo.png
