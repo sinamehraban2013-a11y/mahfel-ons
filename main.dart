@@ -23,9 +23,7 @@ class MahfelOnsApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'محفل اُنس',
       locale: const Locale('fa', 'IR'),
-      supportedLocales: const [
-        Locale('fa', 'IR'),
-      ],
+      supportedLocales: const [Locale('fa', 'IR')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -64,7 +62,6 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
     if (oldStyle) {
       oldStyle.remove();
     }
-
     const style = document.createElement('style');
     style.id = 'mahfel-file-title-style';
     style.innerHTML = `
@@ -85,14 +82,8 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
   @override
   void initState() {
     super.initState();
-
-    _booksController = _createController(
-      'https://eitaa.com/ketab_shiravi',
-    );
-
-    _articlesController = _createController(
-      'https://eitaa.com/maghaleh_shiravi',
-    );
+    _booksController = _createController('https://eitaa.com/ketab_shiravi');
+    _articlesController = _createController('https://eitaa.com/maghaleh_shiravi');
   }
 
   WebViewController _createController(String url) {
@@ -100,9 +91,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF0B2B3A))
       ..setUserAgent(
-        'Mozilla/5.0 (Linux; Android 14; Mobile) '
-        'AppleWebKit/537.36 (KHTML, like Gecko) '
-        'Chrome/124.0.0.0 Mobile Safari/537.36',
+        'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
       )
       ..setNavigationDelegate(
         NavigationDelegate(
@@ -119,11 +108,10 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                 _isLoading = false;
               });
             }
-
             _injectFileTitleStyle();
           },
           onNavigationRequest: (NavigationRequest request) {
-            final targetUrl = request.url;
+            final String targetUrl = request.url;
 
             if (targetUrl.startsWith('et://') ||
                 targetUrl.startsWith('eitaa://')) {
@@ -131,7 +119,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
               return NavigationDecision.prevent;
             }
 
-            final lower = targetUrl.toLowerCase();
+            final String lower = targetUrl.toLowerCase();
 
             if (lower.endsWith('.pdf') ||
                 lower.endsWith('.doc') ||
@@ -144,7 +132,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
               return NavigationDecision.prevent;
             }
 
-            final isInternal =
+            final bool isInternal =
                 targetUrl.contains('eitaa.com/ketab_shiravi') ||
                 targetUrl.contains('eitaa.com/maghaleh_shiravi') ||
                 targetUrl.contains('eitaa.com/m/');
@@ -162,28 +150,24 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
       );
 
     if (controller.platform is AndroidWebViewController) {
-      final androidController =
+      final AndroidWebViewController androidController =
           controller.platform as AndroidWebViewController;
-
       androidController.setOnDownloadStart((String url) {
         _downloadAndOpen(url);
       });
     }
 
     controller.loadRequest(Uri.parse(url));
-
     return controller;
   }
 
   void _injectFileTitleStyle() {
-    final controller = _selectedIndex == 0
-        ? _booksController
-        : _articlesController;
-
+    WebViewController controller =
+        _selectedIndex == 0 ? _booksController : _articlesController;
     controller.runJavaScript(_fixFileTitlesCss);
   }
 
- String _extractFileName(String? disposition, String url) {
+  String _extractFileName(String? disposition, String url) {
     String raw = url;
 
     if (disposition != null && disposition.contains('filename')) {
@@ -195,13 +179,11 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
 
     if (marker != -1) {
       int eq = raw.indexOf('=', marker);
-
       if (eq != -1) {
         name = raw.substring(eq + 1);
       }
     } else {
       int lastSlash = raw.lastIndexOf('/');
-
       if (lastSlash != -1) {
         name = raw.substring(lastSlash + 1);
       } else {
@@ -209,8 +191,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
       }
     }
 
-    name = name.replaceAll(RegExp('\"'), '');
-    name = name.replaceAll("'", "");
+    name = name.replaceAll('"', '');
     name = name.split(';')[0];
     name = name.trim();
 
@@ -221,38 +202,11 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
     }
 
     if (name.isEmpty || !name.contains('.')) {
-      name = 'document_' + DateTime.now().millisecondsSinceEpoch.toString() + '.pdf';
+      name =
+          'document_' + DateTime.now().millisecondsSinceEpoch.toString() + '.pdf';
     }
 
     return name;
-  }
-
-        final normalMatch = RegExp(
-          r'filename[^;=\n]*=((["\']).*?\2|[^;\n]*)',
-          caseSensitive: false,
-        ).firstMatch(disposition);
-
-        if (normalMatch != null && normalMatch.group(1) != null) {
-          return normalMatch
-              .group(1)!
-              .replaceAll('"', '')
-              .replaceAll("'", "")
-              .trim();
-        }
-      } catch (_) {}
-    }
-
-    final uri = Uri.tryParse(url);
-
-    if (uri != null && uri.pathSegments.isNotEmpty) {
-      final lastSegment = uri.pathSegments.last.trim();
-
-      if (lastSegment.isNotEmpty && lastSegment.contains('.')) {
-        return Uri.decodeComponent(lastSegment);
-      }
-    }
-
-    return 'document_${DateTime.now().millisecondsSinceEpoch}.pdf';
   }
 
   Future<void> _downloadAndOpen(String fileUrl) async {
@@ -266,17 +220,12 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
           backgroundColor: Color(0xFF133B4F),
           content: Row(
             children: [
-              CircularProgressIndicator(
-                color: Color(0xFF1ABC9C),
-              ),
+              CircularProgressIndicator(color: Color(0xFF1ABC9C)),
               SizedBox(width: 20),
               Expanded(
                 child: Text(
                   'در حال دریافت و بازگشایی فایل...',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 13),
                 ),
               ),
             ],
@@ -286,35 +235,29 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
     );
 
     try {
-      final uri = Uri.tryParse(fileUrl);
-
+      final Uri? uri = Uri.tryParse(fileUrl);
       if (uri == null) {
-        throw Exception('نشانی فایل معتبر نیست');
+        throw Exception('bad url');
       }
 
-      final response = await http.get(uri);
+      final http.Response response = await http.get(uri);
 
       if (mounted) {
         Navigator.of(context, rootNavigator: true).pop();
       }
 
       if (response.statusCode == 200) {
-        final dir = await getTemporaryDirectory();
+        final Directory dir = await getTemporaryDirectory();
 
-        var fileName = _extractFileName(null, fileUrl);
-
+        String fileName = _extractFileName(null, fileUrl);
+        fileName = fileName.split('?')[0];
         fileName = fileName.replaceAll('/', '_');
         fileName = fileName.replaceAll('\\', '_');
 
-        final file = File('${dir.path}/$fileName');
+        final File file = File(dir.path + '/' + fileName);
+        await file.writeAsBytes(response.bodyBytes, flush: true);
 
-        await file.writeAsBytes(
-          response.bodyBytes,
-          flush: true,
-        );
-
-        final result = await OpenFilex.open(file.path);
-
+        final OpenResult result = await OpenFilex.open(file.path);
         if (result.type != ResultType.done) {
           await _launchExternal(fileUrl);
         }
@@ -325,64 +268,44 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
       if (mounted) {
         Navigator.of(context, rootNavigator: true).pop();
       }
-
       await _launchExternal(fileUrl);
     }
   }
 
   Future<void> _launchExternal(String url) async {
-    final uri = Uri.tryParse(url);
-
+    final Uri? uri = Uri.tryParse(url);
     if (uri == null) return;
-
     try {
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (_) {}
   }
 
   void _showSearchDialog() {
-    final searchController = TextEditingController();
+    final TextEditingController searchController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (ctx) {
         return AlertDialog(
           backgroundColor: const Color(0xFF133B4F),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           title: const Text(
             'جستجو در محتوا',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-            ),
+            style: TextStyle(color: Colors.white, fontSize: 16),
           ),
           content: TextField(
             controller: searchController,
             autofocus: true,
-            style: const TextStyle(
-              color: Colors.white,
-            ),
+            style: const TextStyle(color: Colors.white),
             decoration: const InputDecoration(
               hintText: 'عنوان کتاب یا کلمه کلیدی را بنویسید...',
-              hintStyle: TextStyle(
-                color: Colors.white54,
-                fontSize: 13,
-              ),
+              hintStyle: TextStyle(color: Colors.white54, fontSize: 13),
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(
-                  color: Color(0xFF1ABC9C),
-                ),
+                borderSide: BorderSide(color: Color(0xFF1ABC9C)),
               ),
               focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(
-                  color: Color(0xFF1ABC9C),
-                  width: 2,
-                ),
+                borderSide: BorderSide(color: Color(0xFF1ABC9C), width: 2),
               ),
             ),
           ),
@@ -391,45 +314,34 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
               onPressed: () {
                 Navigator.of(ctx).pop();
               },
-              child: const Text(
-                'انصراف',
-                style: TextStyle(
-                  color: Colors.white60,
-                ),
-              ),
+              child: const Text('انصراف',
+                  style: TextStyle(color: Colors.white60)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1ABC9C),
               ),
               onPressed: () {
-                final query = searchController.text.trim();
-
+                final String query = searchController.text.trim();
                 Navigator.of(ctx).pop();
 
                 if (query.isEmpty) return;
 
-                final targetUrl = _selectedIndex == 0
-                    ? 'https://eitaa.com/ketab_shiravi?q=${Uri.encodeComponent(query)}'
-                    : 'https://eitaa.com/maghaleh_shiravi?q=${Uri.encodeComponent(query)}';
+                final String targetUrl = _selectedIndex == 0
+                    ? 'https://eitaa.com/ketab_shiravi?q=' +
+                        Uri.encodeComponent(query)
+                    : 'https://eitaa.com/maghaleh_shiravi?q=' +
+                        Uri.encodeComponent(query);
 
                 if (_selectedIndex == 0) {
-                  _booksController.loadRequest(
-                    Uri.parse(targetUrl),
-                  );
+                  _booksController.loadRequest(Uri.parse(targetUrl));
                 } else {
-                  _articlesController.loadRequest(
-                    Uri.parse(targetUrl),
-                  );
+                  _articlesController.loadRequest(Uri.parse(targetUrl));
                 }
               },
-              child: const Text(
-                'جستجو',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: const Text('جستجو',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -442,82 +354,46 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
       context: context,
       backgroundColor: const Color(0xFF133B4F),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
         return Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 24,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
                 'ارتباط با ما',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
               ListTile(
-                leading: const Icon(
-                  Icons.language,
-                  color: Color(0xFF1ABC9C),
-                  size: 28,
-                ),
-                title: const Text(
-                  'پایگاه اینترنتی رسمی',
-                  style: TextStyle(
-                    color: Colors.white,
-                  ),
-                ),
-                subtitle: const Text(
-                  'www.shiravi.org',
-                  style: TextStyle(
-                    color: Colors.white70,
-                  ),
-                ),
-                trailing: const Icon(
-                  Icons.arrow_forward_ios,
-                  color: Colors.white54,
-                  size: 16,
-                ),
+                leading: const Icon(Icons.language,
+                    color: Color(0xFF1ABC9C), size: 28),
+                title: const Text('پایگاه اینترنتی رسمی',
+                    style: TextStyle(color: Colors.white)),
+                subtitle: const Text('www.shiravi.org',
+                    style: TextStyle(color: Colors.white70)),
+                trailing: const Icon(Icons.arrow_forward_ios,
+                    color: Colors.white54, size: 16),
                 onTap: () {
                   Navigator.pop(ctx);
                   _launchExternal('https://www.shiravi.org');
                 },
               ),
-              const Divider(
-                color: Colors.white12,
-              ),
+              const Divider(color: Colors.white12),
               ListTile(
-                leading: const Icon(
-                  Icons.send_rounded,
-                  color: Color(0xFF1ABC9C),
-                  size: 28,
-                ),
-                title: const Text(
-                  'کانال رسمی در پیام‌رسان ایتا',
-                  style: TextStyle(
-                    color: Colors.white,
-                  ),
-                ),
-                subtitle: const Text(
-                  '@shiravi_ir',
-                  style: TextStyle(
-                    color: Colors.white70,
-                  ),
-                ),
-                trailing: const Icon(
-                  Icons.arrow_forward_ios,
-                  color: Colors.white54,
-                  size: 16,
-                ),
+                leading: const Icon(Icons.send_rounded,
+                    color: Color(0xFF1ABC9C), size: 28),
+                title: const Text('کانال رسمی در پیام‌رسان ایتا',
+                    style: TextStyle(color: Colors.white)),
+                subtitle: const Text('@shiravi_ir',
+                    style: TextStyle(color: Colors.white70)),
+                trailing: const Icon(Icons.arrow_forward_ios,
+                    color: Colors.white54, size: 16),
                 onTap: () {
                   Navigator.pop(ctx);
                   _launchExternal('https://eitaa.com/shiravi_ir');
@@ -537,37 +413,27 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
       builder: (ctx) {
         return Dialog(
           backgroundColor: const Color(0xFF0F3244),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Container(
             padding: const EdgeInsets.all(20),
-            constraints: const BoxConstraints(
-              maxHeight: 560,
-            ),
+            constraints: const BoxConstraints(maxHeight: 560),
             child: Column(
               children: [
                 const Row(
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Color(0xFF1ABC9C),
-                    ),
+                    Icon(Icons.info_outline, color: Color(0xFF1ABC9C)),
                     SizedBox(width: 8),
                     Text(
                       'درباره استاد و محفل اُنس',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
-                const Divider(
-                  color: Colors.white24,
-                  height: 24,
-                ),
+                const Divider(color: Colors.white24, height: 24),
                 const Expanded(
                   child: SingleChildScrollView(
                     child: Text(
@@ -594,10 +460,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
 «این قلم را آل یاسین داده است
 شکر حق، از بای تا سین داده است»''',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13.5,
-                        height: 1.8,
-                      ),
+                          color: Colors.white, fontSize: 13.5, height: 1.8),
                       textAlign: TextAlign.justify,
                     ),
                   ),
@@ -612,13 +475,10 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                     onPressed: () {
                       Navigator.of(ctx).pop();
                     },
-                    child: const Text(
-                      'بستن',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: const Text('بستن',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -636,36 +496,27 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
         title: const Text(
           'محفل اُنس',
           style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 19,
-          ),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 19),
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(
-              Icons.search,
-              color: Colors.white,
-            ),
+            icon: const Icon(Icons.search, color: Colors.white),
             tooltip: 'جستجو',
             onPressed: _showSearchDialog,
           ),
           PopupMenuButton<String>(
-            icon: const Icon(
-              Icons.more_vert,
-              color: Colors.white,
-            ),
+            icon: const Icon(Icons.more_vert, color: Colors.white),
             color: const Color(0xFF133B4F),
             onSelected: (value) {
               if (value == 'about') {
                 _showAboutUsDialog();
               }
-
               if (value == 'contact') {
                 _showContactUsModal();
               }
-
               if (value == 'reload') {
                 if (_selectedIndex == 0) {
                   _booksController.reload();
@@ -674,61 +525,38 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                 }
               }
             },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
+            itemBuilder: (context) => const [
+              PopupMenuItem(
                 value: 'about',
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Color(0xFF1ABC9C),
-                      size: 20,
-                    ),
+                    Icon(Icons.info_outline,
+                        color: Color(0xFF1ABC9C), size: 20),
                     SizedBox(width: 10),
-                    Text(
-                      'درباره ما',
-                      style: TextStyle(
-                        color: Colors.white,
-                      ),
-                    ),
+                    Text('درباره ما', style: TextStyle(color: Colors.white)),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'contact',
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.contact_support_outlined,
-                      color: Color(0xFF1ABC9C),
-                      size: 20,
-                    ),
+                    Icon(Icons.contact_support_outlined,
+                        color: Color(0xFF1ABC9C), size: 20),
                     SizedBox(width: 10),
-                    Text(
-                      'ارتباط با ما',
-                      style: TextStyle(
-                        color: Colors.white,
-                      ),
-                    ),
+                    Text('ارتباط با ما',
+                        style: TextStyle(color: Colors.white)),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'reload',
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.refresh,
-                      color: Color(0xFF1ABC9C),
-                      size: 20,
-                    ),
+                    Icon(Icons.refresh, color: Color(0xFF1ABC9C), size: 20),
                     SizedBox(width: 10),
-                    Text(
-                      'بارگذاری مجدد',
-                      style: TextStyle(
-                        color: Colors.white,
-                      ),
-                    ),
+                    Text('بارگذاری مجدد',
+                        style: TextStyle(color: Colors.white)),
                   ],
                 ),
               ),
@@ -741,32 +569,21 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
           IndexedStack(
             index: _selectedIndex,
             children: [
-              WebViewWidget(
-                controller: _booksController,
-              ),
-              WebViewWidget(
-                controller: _articlesController,
-              ),
+              WebViewWidget(controller: _booksController),
+              WebViewWidget(controller: _articlesController),
             ],
           ),
           if (_isLoading)
             const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Color(0xFF1ABC9C),
-                ),
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1ABC9C)),
               ),
             ),
         ],
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: Colors.white10,
-              width: 0.5,
-            ),
-          ),
+          border: Border(top: BorderSide(color: Colors.white10, width: 0.5)),
         ),
         child: BottomNavigationBar(
           currentIndex: _selectedIndex,
@@ -774,26 +591,19 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
             setState(() {
               _selectedIndex = index;
             });
-
             _injectFileTitleStyle();
           },
           backgroundColor: const Color(0xFF0B2B3A),
           selectedItemColor: const Color(0xFF1ABC9C),
           unselectedItemColor: Colors.white54,
-          selectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(
-                Icons.menu_book_rounded,
-              ),
+              icon: Icon(Icons.menu_book_rounded),
               label: 'کتاب‌ها',
             ),
             BottomNavigationBarItem(
-              icon: Icon(
-                Icons.article_rounded,
-              ),
+              icon: Icon(Icons.article_rounded),
               label: 'مقالات',
             ),
           ],
