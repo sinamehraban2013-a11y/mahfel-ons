@@ -149,14 +149,6 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
         ),
       );
 
-    if (controller.platform is AndroidWebViewController) {
-      final AndroidWebViewController androidController =
-          controller.platform as AndroidWebViewController;
-      androidController.setOnDownloadStart((String url) {
-        _downloadAndOpen(url);
-      });
-    }
-
     controller.loadRequest(Uri.parse(url));
     return controller;
   }
