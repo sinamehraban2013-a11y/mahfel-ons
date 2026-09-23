@@ -42,3 +42,12 @@ android {
 flutter {
     source "../.."
 }
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty("android")) {
+            project.android {
+                compileSdkVersion 34
+            }
+        }
+    }
+}
