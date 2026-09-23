@@ -19,5 +19,6 @@ dependencies:
 
 flutter:
   uses-material-design: true
-  # assets:
-  #  - mahfel_ons_animation.gif
+  assets:
+    - mahfel_ons_animation.gif
+    - logo.png
