@@ -13,8 +13,8 @@ import 'package:url_launcher/url_launcher.dart';
 // ==========================================
 const String scriptApiUrl =
     'https://script.google.com/macros/s/AKfycbwBLyDbJu78M_nxaZtfcfFtd6DSMp6yl3Lu2lPOPwimuDynqGN8cTvZr4JpN3eJhxGA/exec';
-const String ketabFolderId = '1R2iM-PbRDY9gp7LPBGcKFBO9B5rsPt71';
-const String maghalehFolderId = '1SJ1dS0XAnXwr4WGQPwlcpUJCFDy_T2Ir';
+const String ketabFolderId = '*******';
+const String maghalehFolderId = '*******';
 // ==========================================
 
 void main() {
@@ -222,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final file = File('${dir.path}/${doc.id}.pdf');
         await file.writeAsBytes(response.bodyBytes, flush: true);
 
-        // باز کردن PDF در داخل برنامه (بدون نرم‌افزار جانبی)
+        if (!mounted) return;
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -329,8 +329,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1ABC9C)),
-            onPressed: () Uri emailLaunchUri = Uri(
-                  scheme: 'mailto if (text.isNotEmpty) {
+            onPressed: () async {
+              final String text = feedbackController.text.trim();
+              if (text.isNotEmpty) {
                 final Uri emailLaunchUri = Uri(
                   scheme: 'mailto',
                   path: 'm_khozani@yahoo.com',
@@ -782,7 +783,8 @@ class _MbtiQuizScreenState extends State<MbtiQuizScreen> {
     }
 
     final String res = (countE >= countI ? 'E' : 'I') +
-        (countS >= countN ? 'S' : 'N 'F        (countT >= countF ? 'T' : 'F') +
+        (countS >= countN ? 'S' : 'N') +
+        (countT >= countF ? 'T' : 'F') +
         (countJ >= countP ? 'J' : 'P');
 
     setState(() {
@@ -900,8 +902,8 @@ class _MbtiQuizScreenState extends State<MbtiQuizScreen> {
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 7,
-                  backgroundColor: Colors.white12              ),
- color: const Color(0xFF1ABC9C),
+                  backgroundColor: Colors.white12,
+                  color: const Color(0xFF1ABC9C),
                 ),
               ),
             ],
@@ -1001,10 +1003,8 @@ class _MbtiQuizScreenState extends State<MbtiQuizScreen> {
                                 child: Text(
                                   q.optB,
                                   style: TextStyle(
-                                    color: currentAns == q.typeB,
+                                    color: currentAns == q.typeB ? Colors.white : Colors.white70,
                                     fontSize: 13.5,
-                                  ),
- 13.5,
                                   ),
                                 ),
                               ),
