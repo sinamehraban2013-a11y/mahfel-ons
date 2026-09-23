@@ -183,19 +183,49 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
     controller.runJavaScript(_fixFileTitlesCss);
   }
 
-  String _extractFileName(String? disposition, String url) {
-    if (disposition != null && disposition.isNotEmpty) {
-      try {
-        final utf8Match = RegExp(
-          r"filename\*=UTF-8''([^;]+)",
-          caseSensitive: false,
-        ).firstMatch(disposition);
+ String _extractFileName(String? disposition, String url) {
+    String raw = url;
 
-        if (utf8Match != null && utf8Match.group(1) != null) {
-          return Uri.decodeComponent(
-            utf8Match.group(1)!.trim().replaceAll('"', ''),
-          );
-        }
+    if (disposition != null && disposition.contains('filename')) {
+      raw = disposition;
+    }
+
+    String name = '';
+    int marker = raw.indexOf('filename');
+
+    if (marker != -1) {
+      int eq = raw.indexOf('=', marker);
+
+      if (eq != -1) {
+        name = raw.substring(eq + 1);
+      }
+    } else {
+      int lastSlash = raw.lastIndexOf('/');
+
+      if (lastSlash != -1) {
+        name = raw.substring(lastSlash + 1);
+      } else {
+        name = raw;
+      }
+    }
+
+    name = name.replaceAll(RegExp('\"'), '');
+    name = name.replaceAll("'", "");
+    name = name.split(';')[0];
+    name = name.trim();
+
+    if (name.contains('%')) {
+      try {
+        name = Uri.decodeComponent(name);
+      } catch (_) {}
+    }
+
+    if (name.isEmpty || !name.contains('.')) {
+      name = 'document_' + DateTime.now().millisecondsSinceEpoch.toString() + '.pdf';
+    }
+
+    return name;
+  }
 
         final normalMatch = RegExp(
           r'filename[^;=\n]*=((["\']).*?\2|[^;\n]*)',
