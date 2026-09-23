@@ -13,8 +13,8 @@ import 'package:url_launcher/url_launcher.dart';
 // ==========================================
 const String scriptApiUrl =
     'https://script.google.com/macros/s/AKfycbwBLyDbJu78M_nxaZtfcfFtd6DSMp6yl3Lu2lPOPwimuDynqGN8cTvZr4JpN3eJhxGA/exec';
-const String ketabFolderId = '*******';
-const String maghalehFolderId = '*******';
+const String ketabFolderId = '1g3o3Q9tZ9v2k_ExampleKetabId';
+const String maghalehFolderId = '1h4p4R0uA0w3l_ExampleMaghalehId';
 // ==========================================
 
 void main() {
@@ -88,6 +88,49 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     });
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B2B3A),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/mahfel_ons_animation.gif',
+              width: 220,
+              height: 220,
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.menu_book_rounded,
+                size: 100,
+                color: Color(0xFF1ABC9C),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'محفلِ اُنس',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'تلاقیِ آگاهی و آرامش',
+              style: TextStyle(
+                color: Color(0xFF1ABC9C),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 // ==========================================
 // نمایشگر PDF داخلی (حس ورق زدن کتاب)
