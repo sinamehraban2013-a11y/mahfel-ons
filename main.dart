@@ -89,20 +89,6 @@ class _SplashScreenState extends State<SplashScreen> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0B2B3A),
-      body: Center(
-        child: Image.asset(
-          'mahfel_ons_animation.gif',
-          fit: BoxFit.contain,
-        ),
-      ),
-    );
-  }
-}
-
 // ==========================================
 // نمایشگر PDF داخلی (حس ورق زدن کتاب)
 // ==========================================
